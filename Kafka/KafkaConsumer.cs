@@ -39,6 +39,7 @@ namespace sampledotnetcoreapi.Kafka
             ConsumerConfig.AutoOffsetReset = (AutoOffsetReset) Enum.Parse(typeof(AutoOffsetReset), _configuration.GetValue<string>("ConfigProperties.Kafka.AutoOffsetReset"));
             ConsumerConfig.EnableAutoCommit = true;
             _kafkaConsumer = new ConsumerBuilder<string, string>(ConsumerConfig).Build();
+            _logger.LogInformation("Successfully constructed KafkaConsumer");
             _topicName = _configuration.GetValue<string>("ConfigProperties.Kafka.ResponseTopicName");
         }
         public string getResponseById(string requestId)

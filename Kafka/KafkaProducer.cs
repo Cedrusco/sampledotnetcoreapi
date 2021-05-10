@@ -29,7 +29,7 @@ namespace sampledotnetcoreapi.producer
             var CertFilePath = Configuration.GetValue<string>("ConfigProperties.Kafka.CertFile");
             var Config = _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
             _producer = new ProducerBuilder<string, string>(Config).Build();
- 
+            _logger.LogInformation("Successfully constructed kafka producer");
         }
 
         ~KafkaProducer()
