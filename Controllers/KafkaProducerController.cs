@@ -25,19 +25,22 @@ namespace sampledotnetcoreapi.Controllers
         private readonly string TopicName;
         private Thread consumerThread;
         private readonly ISynchronzationUtil _synchronzationUtil;
+        private readonly IMurmurHashUtil _murmurHashUtil;
 
 
         public KafkaProducerController(IConfiguration Configuration, 
                     ILogger<KafkaProducerController> Logger,
                     IKafkaProducer Producer,
                     ISynchronzationUtil SynchronzationUtil,
-                    IKafkaConsumer Consumer)
+                    IKafkaConsumer Consumer,
+                    IMurmurHashUtil MurmurHashUtil)
         {
             this._configuration = Configuration;
             this._logger = Logger;
             this._producer = Producer;
             this._synchronzationUtil = SynchronzationUtil;
             this._consumer = Consumer;
+            this._murmurHashUtil = MurmurHashUtil;
             consumerThread = new Thread(_consumer.startConsumer);
             consumerThread.Start();
             TopicName = _configuration["ConfigProperties:Kafka:TopicName"];
@@ -52,6 +55,11 @@ namespace sampledotnetcoreapi.Controllers
                 // This needs to be checked against the partition assignment of response topic consumer
                 // in future enhancements
                 string requestId = Guid.NewGuid().ToString();
+                // This could affect response time 
+                while (!_consumer.isAssignmentPartition(_murmurHashUtil.murmurHash(requestId))) {
+                    requestId = Guid.NewGuid().ToString();
+                }
+                _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 var reader = new StreamReader(Request.Body);
                 var value = await reader.ReadToEndAsync();
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", TopicName, requestId, value);
