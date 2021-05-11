@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace sampledotnetcoreapi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/employees")]
     [ApiController]
     public class KafkaProducerController : ControllerBase
     {
@@ -40,9 +40,10 @@ namespace sampledotnetcoreapi.Controllers
             this._consumer = Consumer;
             consumerThread = new Thread(_consumer.startConsumer);
             consumerThread.Start();
-            TopicName = _configuration.GetValue<string>("ConfigProperties.Kafka.TopicName");
+            TopicName = _configuration["ConfigProperties:Kafka:TopicName"];
         }
 
+        [Route("")]
         [HttpPost]
         public IActionResult post()
         {
@@ -52,7 +53,9 @@ namespace sampledotnetcoreapi.Controllers
                 // in future enhancements
                 string requestId = Guid.NewGuid().ToString();
                 var reader = new StreamReader(Request.Body);
-                _producer.ProduceRecord(TopicName, requestId, reader.ReadToEnd());
+                var value = reader.ReadToEnd();
+                _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", TopicName, requestId, value);
+                _producer.ProduceRecord(TopicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
 
                 _synchronzationUtil.addLockObject(requestId, syncObject);
