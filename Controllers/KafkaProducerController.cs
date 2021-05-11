@@ -45,7 +45,7 @@ namespace sampledotnetcoreapi.Controllers
 
         [Route("")]
         [HttpPost]
-        public IActionResult post()
+        public async Task<IActionResult> post()
         {
             try
             {
@@ -53,9 +53,9 @@ namespace sampledotnetcoreapi.Controllers
                 // in future enhancements
                 string requestId = Guid.NewGuid().ToString();
                 var reader = new StreamReader(Request.Body);
-                var value = reader.ReadToEnd();
+                var value = await reader.ReadToEndAsync();
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", TopicName, requestId, value);
-                _producer.ProduceRecord(TopicName, requestId, value);
+                 _producer.ProduceRecord(TopicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
 
                 _synchronzationUtil.addLockObject(requestId, syncObject);

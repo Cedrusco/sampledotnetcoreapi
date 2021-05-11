@@ -20,22 +20,13 @@ namespace sampledotnetcoreapi.producer
         //Producer is thread safe as per the confluent kafka team
         private  IProducer<string, string> _producer;
 
-        public KafkaProducer(IConfiguration Configuration, ILogger<KafkaProducer> Logger,
+        public  KafkaProducer(IConfiguration Configuration, ILogger<KafkaProducer> Logger,
                     IConfigUtil ConfigUtil)
         {
             this._configuration = Configuration;
             this._logger = Logger;
             this._configUtil = ConfigUtil;
-            var KafkaConfigFile = Configuration["ConfigProperties:Kafka:ConfigFile"];
-            var CertFilePath = Configuration["ConfigProperties:Kafka:CertFile"];
-            //output all the properties
-            _logger.LogInformation("microsoft loglevel {topic}", Configuration["Logging:LogLevel:Microsoft"]);
-            _logger.LogInformation("topic name {topic}", Configuration["ConfigProperties:Kafka:TopicName"]);
-            _logger.LogInformation("config file {conffile}", KafkaConfigFile);           
-            var Config = _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
-            _producer = new ProducerBuilder<string, string>(Config).Build();
-          
-            _logger.LogInformation("Successfully constructed kafka producer");
+            _producer = null;
         }
 
         ~KafkaProducer()
@@ -43,18 +34,30 @@ namespace sampledotnetcoreapi.producer
             _producer.Flush();
         }
 
-        public  void ProduceRecord(string TopicName, string key, string value)
+        public  async void ProduceRecord(string TopicName, string key, string value)
         {
             var Message = new Message<string, string> { Key = key, Value = value };
-            /**
-            CancellationToken cts = new CancellationToken();
+            
+            if (_producer == null)
+            {
+                var KafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
+                var CertFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
+                //output all the properties
+                _logger.LogInformation("microsoft loglevel {topic}", _configuration["Logging:LogLevel:Microsoft"]);
+                _logger.LogInformation("topic name {topic}", _configuration["ConfigProperties:Kafka:TopicName"]);
+                _logger.LogInformation("config file {conffile}", KafkaConfigFile);
+                var Config = await _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
+                _producer = new ProducerBuilder<string, string>(Config).Build();
 
-            DeliveryResult<string, string> SentStatus = await _producer.ProduceAsync(TopicName, Message, cts);
+                _logger.LogInformation("Successfully constructed kafka producer");
+            }
+
+            DeliveryResult<string, string> SentStatus = await _producer.ProduceAsync(TopicName, Message);
 
             _logger.LogInformation("Produced message to topic '{Topic}', partition  '{TopicPartition}' , Offset '{TopicPartitionOffset}'",
-                        SentStatus.Topic, SentStatus.TopicPartition, SentStatus.TopicPartitionOffset);
-            **/
-            
+                        SentStatus.Topic, SentStatus.TopicPartition.Partition, SentStatus.TopicPartitionOffset.Offset);
+
+            /*
             _producer.Produce(TopicName, Message, (SentStatus) =>
             {
                 if (SentStatus.Error.Code != ErrorCode.NoError)
@@ -68,6 +71,7 @@ namespace sampledotnetcoreapi.producer
                 }
 
             });
+            */
             
         }
     }

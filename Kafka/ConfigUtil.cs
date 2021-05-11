@@ -16,11 +16,11 @@ namespace sampledotnetcoreapi.Kafka
         {
             this._logger = Logger;
         }
-        public ClientConfig LoadConfig(string FileName, string CaLocation)
+        public async Task<ClientConfig> LoadConfig(string FileName, string CaLocation)
         {
                 try
                 {
-                    var kafkaConfigPropertiesMap = File.ReadAllLines(FileName)
+                    var kafkaConfigPropertiesMap = (await File.ReadAllLinesAsync(FileName))
                                     .Where(line => !line.StartsWith("#"))
                                     .ToDictionary(line => line.Substring(0, line.IndexOf('=')),
                                                     line => line.Substring(line.IndexOf('=') + 1));

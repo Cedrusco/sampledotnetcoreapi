@@ -14,7 +14,7 @@ namespace sampledotnetcoreapi.Kafka
     {
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
-        private readonly IConsumer<string, string> _kafkaConsumer;
+        private IConsumer<string, string> _kafkaConsumer;
         private readonly IConfigUtil _configUtil;
         private readonly ISynchronzationUtil _synchronzationUtil;
 
@@ -30,16 +30,6 @@ namespace sampledotnetcoreapi.Kafka
             this._configuration = Configuration;
             this._configUtil = ConfigUtil;
             this._synchronzationUtil = SynchronzationUtil;
-            var KafkaConfigFile = Configuration["ConfigProperties:Kafka:ConfigFile"];
-            var CertFilePath = Configuration["ConfigProperties:Kafka:CertFile"];
-            var Config = _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
-            var ConsumerConfig = new ConsumerConfig(Config);
-            // INSTANCEID can be omitted depending upon how we choose requestId
-            ConsumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
-            ConsumerConfig.AutoOffsetReset = (AutoOffsetReset) Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
-            ConsumerConfig.EnableAutoCommit = true;
-            _kafkaConsumer = new ConsumerBuilder<string, string>(ConsumerConfig).Build();
-            _logger.LogInformation("Successfully constructed KafkaConsumer");
             _topicName = _configuration["ConfigProperties:Kafka:ResponseTopicName"];
         }
         public string getResponseById(string requestId)
@@ -66,8 +56,22 @@ namespace sampledotnetcoreapi.Kafka
             return false;
         }
 
-        public void startConsumer()
+        public async void startConsumer()
         {
+
+            if (_kafkaConsumer == null)
+            {
+                var KafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
+                var CertFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
+                var Config = await _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
+                var ConsumerConfig = new ConsumerConfig(Config);
+                // INSTANCEID can be omitted depending upon how we choose requestId
+                ConsumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
+                ConsumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
+                ConsumerConfig.EnableAutoCommit = true;
+                _kafkaConsumer = new ConsumerBuilder<string, string>(ConsumerConfig).Build();
+                _logger.LogInformation("Successfully constructed KafkaConsumer");
+            }
            
             //ConsumerRebalanceListener not used for now
             _kafkaConsumer.Subscribe(_topicName);

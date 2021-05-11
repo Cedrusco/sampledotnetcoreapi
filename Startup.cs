@@ -29,10 +29,12 @@ namespace sampledotnetcoreapi
         public void ConfigureServices(IServiceCollection services)
         {
 
+            /*
             services.Configure<KestrelServerOptions>(options =>
            {
                options.AllowSynchronousIO = true;
            });
+            */
             services.AddControllers();
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
             services.AddSingleton<IKafkaConsumer, KafkaConsumer>();
