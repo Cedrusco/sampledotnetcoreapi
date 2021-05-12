@@ -7,9 +7,9 @@ namespace sampledotnetcoreapi.Kafka
 {
     public interface IKafkaConsumer
     {
-        String getResponseById(String requestId);
-        void startConsumer();
+        String GetResponseById(String requestId);
+        void StartConsumer();
 
-        bool isAssignmentPartition(int partitionId);
+        bool IsAssignmentPartition(int partitionId);
     }
 }

@@ -22,28 +22,28 @@ namespace sampledotnetcoreapi.Controllers
         private readonly IKafkaProducer _producer;
         private readonly IKafkaConsumer _consumer;
 
-        private readonly string TopicName;
+        private readonly string topicName;
         private Thread consumerThread;
         private readonly ISynchronzationUtil _synchronzationUtil;
-        private readonly IMurmurHashUtil _murmurHashUtil;
+        private readonly IMurmurHashUtil _murmur2HashUtil;
 
 
-        public KafkaProducerController(IConfiguration Configuration, 
-                    ILogger<KafkaProducerController> Logger,
-                    IKafkaProducer Producer,
-                    ISynchronzationUtil SynchronzationUtil,
-                    IKafkaConsumer Consumer,
-                    IMurmurHashUtil Murmur2HashUtil)
+        public KafkaProducerController(IConfiguration configuration, 
+                    ILogger<KafkaProducerController> logger,
+                    IKafkaProducer producer,
+                    ISynchronzationUtil synchronzationUtil,
+                    IKafkaConsumer consumer,
+                    IMurmurHashUtil murmur2HashUtil)
         {
-            this._configuration = Configuration;
-            this._logger = Logger;
-            this._producer = Producer;
-            this._synchronzationUtil = SynchronzationUtil;
-            this._consumer = Consumer;
-            this._murmurHashUtil = Murmur2HashUtil;
-            consumerThread = new Thread(_consumer.startConsumer);
+            this._configuration = configuration;
+            this._logger = logger;
+            this._producer = producer;
+            this._synchronzationUtil = synchronzationUtil;
+            this._consumer = consumer;
+            this._murmur2HashUtil = murmur2HashUtil;
+            consumerThread = new Thread(_consumer.StartConsumer);
             consumerThread.Start();
-            TopicName = _configuration["ConfigProperties:Kafka:TopicName"];
+            topicName = _configuration["ConfigProperties:Kafka:TopicName"];
         }
 
         [Route("")]
@@ -56,19 +56,19 @@ namespace sampledotnetcoreapi.Controllers
                 // in future enhancements
                 string requestId = Guid.NewGuid().ToString();
                 // This could affect response time 
-                while (!_consumer.isAssignmentPartition(_murmurHashUtil.murmurHash(requestId))) {
+                while (!_consumer.IsAssignmentPartition(_murmur2HashUtil.MurmurHash(requestId))) {
                     requestId = Guid.NewGuid().ToString();
                 }
                 _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 var reader = new StreamReader(Request.Body);
                 var value = await reader.ReadToEndAsync();
-                _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", TopicName, requestId, value);
-                 _producer.ProduceRecord(TopicName, requestId, value);
+                _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", topicName, requestId, value);
+                 _producer.ProduceRecord(topicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
 
-                _synchronzationUtil.addLockObject(requestId, syncObject);
+                _synchronzationUtil.AddLockObject(requestId, syncObject);
                 syncObject.WaitOne();
-                return Ok(_consumer.getResponseById(requestId));
+                return Ok(_consumer.GetResponseById(requestId));
             }
             catch (Exception e)
             {

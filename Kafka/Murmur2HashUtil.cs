@@ -31,24 +31,24 @@ SOFTWARE.
  */
 namespace sampledotnetcoreapi.Kafka
 {
-    public class MurmurHashUtil : IMurmurHashUtil
+    public class Murmur2HashUtil : IMurmurHashUtil
     {
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
         private readonly int NumPartitions;
 
-        public MurmurHashUtil(ILogger<MurmurHashUtil> Logger, 
-                        IConfiguration Configuration)
+        public Murmur2HashUtil(ILogger<Murmur2HashUtil> logger, 
+                        IConfiguration configuration)
         {
-            this._logger = Logger;
-            this._configuration = Configuration;
+            this._logger = logger;
+            this._configuration = configuration;
             this.NumPartitions = _configuration.GetValue<int>("ConfigProperties:Kafka:ResponseTopicPartitions");
         }
 		/**
 		 * casting uint to int (integer number will be less than number of partitions
 		 * which will be a small number
 		 */
-        public int murmurHash(String key)
+        public int MurmurHash(String key)
         {
 			return (int) Hash(key) % NumPartitions;
         }

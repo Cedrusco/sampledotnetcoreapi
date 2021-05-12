@@ -21,18 +21,18 @@ namespace sampledotnetcoreapi.Kafka
         private readonly string _topicName;
         private ConcurrentDictionary<string, string> _responseMap = new ConcurrentDictionary<string, string>();
 
-        public KafkaConsumer(ILogger<KafkaConsumer> Logger, 
-                                IConfiguration Configuration,
-                                   IConfigUtil ConfigUtil,
-                                   ISynchronzationUtil SynchronzationUtil)
+        public KafkaConsumer(ILogger<KafkaConsumer> logger, 
+                                IConfiguration configuration,
+                                   IConfigUtil configUtil,
+                                   ISynchronzationUtil synchronzationUtil)
         {
-            this._logger = Logger;
-            this._configuration = Configuration;
-            this._configUtil = ConfigUtil;
-            this._synchronzationUtil = SynchronzationUtil;
+            this._logger = logger;
+            this._configuration = configuration;
+            this._configUtil = configUtil;
+            this._synchronzationUtil = synchronzationUtil;
             _topicName = _configuration["ConfigProperties:Kafka:ResponseTopicName"];
         }
-        public string getResponseById(string requestId)
+        public string GetResponseById(string requestId)
         {
             string responseValue = null;
             if (!_responseMap.TryGetValue(requestId, out responseValue))
@@ -42,9 +42,9 @@ namespace sampledotnetcoreapi.Kafka
             return responseValue;
         }
 
-        public bool isAssignmentPartition(int partitionId)
+        public bool IsAssignmentPartition(int partitionId)
         {
-            ensureConsumer();
+            EnsureConsumer();
             foreach( var Assignment in _kafkaConsumer.Assignment)
             {
                 if (Assignment.Partition.Equals(partitionId) && 
@@ -57,10 +57,10 @@ namespace sampledotnetcoreapi.Kafka
             return false;
         }
 
-        public void startConsumer()
+        public void StartConsumer()
         {
 
-            ensureConsumer();
+            EnsureConsumer();
             //ConsumerRebalanceListener not used for now
             _kafkaConsumer.Subscribe(_topicName);
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -77,7 +77,7 @@ namespace sampledotnetcoreapi.Kafka
                     _logger.LogInformation("Consumed the record key = {Key}, value = {Value}",
                         ConsumerRecord.Message.Key, ConsumerRecord.Message.Value) ;
                     // Get the lock object for request
-                    EventWaitHandle lockObject = _synchronzationUtil.getLogObject(ConsumerRecord.Message.Key);
+                    EventWaitHandle lockObject = _synchronzationUtil.GetLockObject(ConsumerRecord.Message.Key);
                     if (lockObject != null)
                     {
                         if (!_responseMap.TryAdd(ConsumerRecord.Message.Key, ConsumerRecord.Message.Value))
@@ -106,19 +106,19 @@ namespace sampledotnetcoreapi.Kafka
             }
         }
 
-        private async void ensureConsumer()
+        private async void EnsureConsumer()
         {
             if (_kafkaConsumer == null)
             {
-                var KafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
-                var CertFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
-                var Config = await _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
-                var ConsumerConfig = new ConsumerConfig(Config);
+                var kafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
+                var certFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
+                var config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
+                var consumerConfig = new ConsumerConfig(config);
                 // INSTANCEID can be omitted depending upon how we choose requestId
-                ConsumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
-                ConsumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
-                ConsumerConfig.EnableAutoCommit = true;
-                _kafkaConsumer = new ConsumerBuilder<string, string>(ConsumerConfig).Build();
+                consumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
+                consumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
+                consumerConfig.EnableAutoCommit = true;
+                _kafkaConsumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
                 _logger.LogInformation("Successfully constructed KafkaConsumer");
             }
         }

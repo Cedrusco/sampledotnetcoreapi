@@ -14,11 +14,11 @@ namespace sampledotnetcoreapi.Kafka
         private ILogger _logger;
         private ConcurrentDictionary<string, EventWaitHandle> lockObjectMap = new ConcurrentDictionary<string, EventWaitHandle>();
 
-        public SynchronizationUtil(ILogger<SynchronizationUtil> Logger)
+        public SynchronizationUtil(ILogger<SynchronizationUtil> logger)
         {
-            this._logger = Logger;
+            this._logger = logger;
         }
-        public void addLockObject(string requestId, EventWaitHandle lockObject)
+        public void AddLockObject(string requestId, EventWaitHandle lockObject)
         {
 
             if (!lockObjectMap.TryAdd(requestId, lockObject))
@@ -27,7 +27,7 @@ namespace sampledotnetcoreapi.Kafka
             }
         }
 
-        public EventWaitHandle getLogObject(string requestId)
+        public EventWaitHandle GetLockObject(string requestId)
         {
             EventWaitHandle lockObject = null;
             if (!lockObjectMap.TryRemove(requestId, out lockObject))
@@ -37,7 +37,7 @@ namespace sampledotnetcoreapi.Kafka
             return lockObject;
         }
 
-        public void removeLockObject(string requestId)
+        public void RemoveLockObject(string requestId)
         {
             throw new NotImplementedException();
         }

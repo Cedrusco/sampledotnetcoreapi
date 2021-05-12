@@ -8,9 +8,9 @@ namespace sampledotnetcoreapi.Kafka
 {
     public interface ISynchronzationUtil
     {
-        public void addLockObject(string requestId, EventWaitHandle lockObject);
-        public void removeLockObject(string requestId);
+        public void AddLockObject(string requestId, EventWaitHandle lockObject);
+        public void RemoveLockObject(string requestId);
 
-        public EventWaitHandle getLogObject(string requestId);
+        public EventWaitHandle GetLockObject(string requestId);
     }
 }

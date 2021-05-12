@@ -12,31 +12,31 @@ namespace sampledotnetcoreapi.Kafka
     {
         private readonly ILogger _logger;
 
-        public ConfigUtil(ILogger<ConfigUtil> Logger)
+        public ConfigUtil(ILogger<ConfigUtil> logger)
         {
-            this._logger = Logger;
+            this._logger = logger;
         }
-        public async Task<ClientConfig> LoadConfig(string FileName, string CaLocation)
+        public async Task<ClientConfig> LoadConfig(string fileName, string caLocation)
         {
                 try
                 {
-                    var kafkaConfigPropertiesMap = (await File.ReadAllLinesAsync(FileName))
+                    var kafkaConfigPropertiesMap = (await File.ReadAllLinesAsync(fileName))
                                     .Where(line => !line.StartsWith("#"))
                                     .ToDictionary(line => line.Substring(0, line.IndexOf('=')),
                                                     line => line.Substring(line.IndexOf('=') + 1));
 
                     ClientConfig kafkaConfig = new ClientConfig(kafkaConfigPropertiesMap);
 
-                    if (CaLocation != null)
+                    if (caLocation != null)
                     {
-                        kafkaConfig.SslCaLocation = CaLocation;
+                        kafkaConfig.SslCaLocation = caLocation;
                     }
 
                     return kafkaConfig;
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Error reading the kafka configuration filename= '{FileName}', '{Message}'", FileName, e.Message);
+                    _logger.LogError("Error reading the kafka configuration filename= '{FileName}', '{Message}'", fileName, e.Message);
                     // need to refactor later
                     return null;
                 }

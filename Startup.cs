@@ -41,7 +41,7 @@ namespace sampledotnetcoreapi
             services.AddSingleton<IKafkaConsumer, KafkaConsumer>();
             services.AddSingleton<IConfigUtil, ConfigUtil>();
             services.AddSingleton<ISynchronzationUtil, SynchronizationUtil>();
-            services.AddSingleton<IMurmurHashUtil, MurmurHashUtil>();
+            services.AddSingleton<IMurmurHashUtil, Murmur2HashUtil>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
