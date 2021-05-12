@@ -33,14 +33,14 @@ namespace sampledotnetcoreapi.Controllers
                     IKafkaProducer Producer,
                     ISynchronzationUtil SynchronzationUtil,
                     IKafkaConsumer Consumer,
-                    IMurmurHashUtil MurmurHashUtil)
+                    IMurmurHashUtil Murmur2HashUtil)
         {
             this._configuration = Configuration;
             this._logger = Logger;
             this._producer = Producer;
             this._synchronzationUtil = SynchronzationUtil;
             this._consumer = Consumer;
-            this._murmurHashUtil = MurmurHashUtil;
+            this._murmurHashUtil = Murmur2HashUtil;
             consumerThread = new Thread(_consumer.startConsumer);
             consumerThread.Start();
             TopicName = _configuration["ConfigProperties:Kafka:TopicName"];
@@ -72,7 +72,7 @@ namespace sampledotnetcoreapi.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError("Exception writing to kafka  message  '{message}'", e.Message);
+                _logger.LogError("Exception writing to kafka  message  {message}, stack trace {stack}", e.Message, e.StackTrace);
                 return this.StatusCode(StatusCodes.Status500InternalServerError, "Exception writing to kafka");
             }
         }

@@ -44,6 +44,7 @@ namespace sampledotnetcoreapi.Kafka
 
         public bool isAssignmentPartition(int partitionId)
         {
+            ensureConsumer();
             foreach( var Assignment in _kafkaConsumer.Assignment)
             {
                 if (Assignment.Partition.Equals(partitionId) && 
@@ -56,23 +57,10 @@ namespace sampledotnetcoreapi.Kafka
             return false;
         }
 
-        public async void startConsumer()
+        public void startConsumer()
         {
 
-            if (_kafkaConsumer == null)
-            {
-                var KafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
-                var CertFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
-                var Config = await _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
-                var ConsumerConfig = new ConsumerConfig(Config);
-                // INSTANCEID can be omitted depending upon how we choose requestId
-                ConsumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
-                ConsumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
-                ConsumerConfig.EnableAutoCommit = true;
-                _kafkaConsumer = new ConsumerBuilder<string, string>(ConsumerConfig).Build();
-                _logger.LogInformation("Successfully constructed KafkaConsumer");
-            }
-           
+            ensureConsumer();
             //ConsumerRebalanceListener not used for now
             _kafkaConsumer.Subscribe(_topicName);
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -115,6 +103,23 @@ namespace sampledotnetcoreapi.Kafka
             finally
             {
                 _kafkaConsumer.Close();
+            }
+        }
+
+        private async void ensureConsumer()
+        {
+            if (_kafkaConsumer == null)
+            {
+                var KafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
+                var CertFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
+                var Config = await _configUtil.LoadConfig(KafkaConfigFile, CertFilePath);
+                var ConsumerConfig = new ConsumerConfig(Config);
+                // INSTANCEID can be omitted depending upon how we choose requestId
+                ConsumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
+                ConsumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
+                ConsumerConfig.EnableAutoCommit = true;
+                _kafkaConsumer = new ConsumerBuilder<string, string>(ConsumerConfig).Build();
+                _logger.LogInformation("Successfully constructed KafkaConsumer");
             }
         }
     }
