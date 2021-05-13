@@ -7,6 +7,7 @@ namespace sampledotnetcoreapi.Kafka
 {
     public interface IMurmurHashUtil
     {
-        public int MurmurHash(String key);
+        public int MurmurHash(string key);
+        public int MurmurHash(string key, int numPartitions);
     }
 }

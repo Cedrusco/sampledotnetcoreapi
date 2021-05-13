@@ -109,6 +109,9 @@ namespace sampledotnetcoreapi.Kafka
 			return h;
 		}
 
-
-	}
+        public int MurmurHash(string key, int numPartitions)
+        {
+			return (int)Hash(key) % numPartitions;
+		}
+    }
 }

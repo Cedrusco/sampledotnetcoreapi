@@ -19,14 +19,16 @@ namespace sampledotnetcoreapi.producer
         private readonly IConfigUtil _configUtil;
         //Producer is thread safe as per the confluent kafka team
         private  IProducer<string, string> _producer;
+        private IMurmurHashUtil _murmurHashUtil;
 
         public  KafkaProducer(IConfiguration configuration, ILogger<KafkaProducer> logger,
-                    IConfigUtil configUtil)
+                    IConfigUtil configUtil, IMurmurHashUtil murmurHashUtil)
         {
             this._configuration = configuration;
             this._logger = logger;
             this._configUtil = configUtil;
-            _producer = null;
+            this._producer = null;
+            this._murmurHashUtil = murmurHashUtil;
         }
 
         ~KafkaProducer()
@@ -47,15 +49,24 @@ namespace sampledotnetcoreapi.producer
                 _logger.LogInformation("topic name {topic}", _configuration["ConfigProperties:Kafka:TopicName"]);
                 _logger.LogInformation("config file {conffile}", kafkaConfigFile);
                 var Config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
-                _producer = new ProducerBuilder<string, string>(Config).Build();
-
+                var producerConfig = new ProducerConfig(Config);
+                //producerConfig.Partitioner = Partitioner.Murmur2Random;
+                // custom partitioner needs to set on app that produces response
+                _producer = new ProducerBuilder<string, string>(Config)
+                    .SetPartitioner(topicName, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
+                    {
+                        var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
+                        return _murmurHashUtil.MurmurHash(keyString, partitionCount);
+                    })
+                    .Build();
+      
                 _logger.LogInformation("Successfully constructed kafka producer");
             }
 
             DeliveryResult<string, string> SentStatus = await _producer.ProduceAsync(topicName, Message);
 
             _logger.LogInformation("Produced message to topic '{Topic}', partition  '{TopicPartition}' , Offset '{TopicPartitionOffset}'",
-                        SentStatus.Topic, SentStatus.TopicPartition.Partition, SentStatus.TopicPartitionOffset.Offset);
+                        SentStatus.Topic, SentStatus.TopicPartition.Partition.Value, SentStatus.TopicPartitionOffset.Offset);
 
             /*
             _producer.Produce(TopicName, Message, (SentStatus) =>

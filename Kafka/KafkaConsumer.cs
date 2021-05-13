@@ -45,6 +45,12 @@ namespace sampledotnetcoreapi.Kafka
         public bool IsAssignmentPartition(int partitionId)
         {
             EnsureConsumer();
+            /** for test
+            if (partitionId == 0)
+            {
+                return true;
+            }
+            **/
             foreach( var Assignment in _kafkaConsumer.Assignment)
             {
                 if (Assignment.Partition.Equals(partitionId) && 
@@ -115,7 +121,12 @@ namespace sampledotnetcoreapi.Kafka
                 var config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
                 var consumerConfig = new ConsumerConfig(config);
                 // INSTANCEID can be omitted depending upon how we choose requestId
-                consumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"] + Environment.GetEnvironmentVariable("INSTANCE_ID");
+                consumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"];
+                var computePartition = _configuration.GetValue<bool>("ConfigProperties:Kafka:ComputePartition");
+                if (computePartition)
+                {
+                    consumerConfig.GroupId += Environment.GetEnvironmentVariable("INSTANCE_ID");
+                }                
                 consumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
                 consumerConfig.EnableAutoCommit = true;
                 _kafkaConsumer = new ConsumerBuilder<string, string>(consumerConfig).Build();

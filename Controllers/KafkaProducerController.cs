@@ -56,8 +56,13 @@ namespace sampledotnetcoreapi.Controllers
                 // in future enhancements
                 string requestId = Guid.NewGuid().ToString();
                 // This could affect response time 
-                while (!_consumer.IsAssignmentPartition(_murmur2HashUtil.MurmurHash(requestId))) {
-                    requestId = Guid.NewGuid().ToString();
+                var computePartition = _configuration.GetValue<bool>("ConfigProperties:Kafka:ComputePartition");
+                if (computePartition)
+                {
+                    while (!_consumer.IsAssignmentPartition(_murmur2HashUtil.MurmurHash(requestId)))
+                    {
+                        requestId = Guid.NewGuid().ToString();
+                    }
                 }
                 _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 var reader = new StreamReader(Request.Body);
