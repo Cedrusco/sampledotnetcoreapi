@@ -25,28 +25,29 @@ namespace sampledotnetcoreapi.Kafka
 			_murmurHash2 = MurmurHash2Factory.Instance.Create();
         }
 		/**
-		 * casting uint to int (integer number will be less than number of partitions
-		 * which will be a small number
+		 * Math.Abs throws overflow exception in some cases.
+		 *  Making the 2's complement signed bit zero before
+		 * determining the partition number
 		 */
         public int MurmurHash(String key)
         {
-			return Math.Abs(_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).GetHashCode()) % NumPartitions;
+			return (_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).GetHashCode() & 0x7fffffff) % NumPartitions;
 			//return (int) Hash(key) % NumPartitions;
         }
 
 		public int MurmurHash(string key, int numPartitions)
 		{
-			return Math.Abs(_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).GetHashCode()) % numPartitions;
+			return (_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).GetHashCode() & 0x7fffffff) % numPartitions;
 		}
 
 		public int MurmurHash(byte[] keyData)
 		{
-			return Math.Abs(_murmurHash2.ComputeHash(keyData).GetHashCode()) % NumPartitions;
+			return (_murmurHash2.ComputeHash(keyData).GetHashCode() & 0x7fffffff) % NumPartitions;
 		}
 
 		public int MurmurHash(byte[] keyData, int numPartitions)
 		{
-			return Math.Abs(_murmurHash2.ComputeHash(keyData).GetHashCode()) % numPartitions;
+			return (_murmurHash2.ComputeHash(keyData).GetHashCode() & 0x7fffffff) % numPartitions;
 		}
 
     }
