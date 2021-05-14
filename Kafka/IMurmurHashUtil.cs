@@ -9,5 +9,7 @@ namespace sampledotnetcoreapi.Kafka
     {
         public int MurmurHash(string key);
         public int MurmurHash(string key, int numPartitions);
+        public int MurmurHash(byte[] keyData);
+        public int MurmurHash(byte[] keyData, int numPartitions);
     }
 }

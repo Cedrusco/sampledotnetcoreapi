@@ -56,6 +56,7 @@ namespace sampledotnetcoreapi.Kafka
                 if (Assignment.Partition.Equals(partitionId) && 
                         Assignment.Topic.Equals(_topicName))
                 {
+                    _logger.LogInformation("matching partition id : {partitionId} ", partitionId);
                     return true;
                 }
             }

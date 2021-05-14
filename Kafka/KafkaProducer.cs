@@ -9,6 +9,7 @@ using System.IO;
 using Microsoft.VisualBasic.CompilerServices;
 using sampledotnetcoreapi.Kafka;
 using System.Threading;
+using System.Data.HashFunction.MurmurHash;
 
 namespace sampledotnetcoreapi.producer
 {
@@ -56,7 +57,8 @@ namespace sampledotnetcoreapi.producer
                     .SetPartitioner(topicName, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
                     {
                         var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
-                        return _murmurHashUtil.MurmurHash(keyString, partitionCount);
+                        _logger.LogInformation("Key string in partitioner : {key}", keyString);
+                        return _murmurHashUtil.MurmurHash(keyData.ToArray(), partitionCount);
                     })
                     .Build();
       
