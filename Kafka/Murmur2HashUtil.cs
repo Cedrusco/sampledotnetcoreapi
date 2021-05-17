@@ -31,23 +31,23 @@ namespace sampledotnetcoreapi.Kafka
 		 */
         public int MurmurHash(String key)
         {
-			return (_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).GetHashCode() & 0x7fffffff) % NumPartitions;
+			return (BitConverter.ToInt32(_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).Hash, 0) & 0x7fffffff) % NumPartitions;
 			//return (int) Hash(key) % NumPartitions;
         }
 
 		public int MurmurHash(string key, int numPartitions)
 		{
-			return (_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).GetHashCode() & 0x7fffffff) % numPartitions;
+			return (BitConverter.ToInt32(_murmurHash2.ComputeHash(Encoding.UTF8.GetBytes(key)).Hash, 0) & 0x7fffffff) % numPartitions;
 		}
 
 		public int MurmurHash(byte[] keyData)
 		{
-			return (_murmurHash2.ComputeHash(keyData).GetHashCode() & 0x7fffffff) % NumPartitions;
+			return (BitConverter.ToInt32(_murmurHash2.ComputeHash(keyData).Hash, 0) & 0x7fffffff) % NumPartitions;
 		}
 
 		public int MurmurHash(byte[] keyData, int numPartitions)
 		{
-			return (_murmurHash2.ComputeHash(keyData).GetHashCode() & 0x7fffffff) % numPartitions;
+			return (BitConverter.ToInt32(_murmurHash2.ComputeHash(keyData).Hash, 0) & 0x7fffffff) % numPartitions;
 		}
 
     }

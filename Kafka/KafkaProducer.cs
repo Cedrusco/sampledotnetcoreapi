@@ -20,16 +20,16 @@ namespace sampledotnetcoreapi.producer
         private readonly IConfigUtil _configUtil;
         //Producer is thread safe as per the confluent kafka team
         private  IProducer<string, string> _producer;
-        private IMurmurHashUtil _murmurHashUtil;
+        private ICustomPartitioner _customPartitioner;
 
         public  KafkaProducer(IConfiguration configuration, ILogger<KafkaProducer> logger,
-                    IConfigUtil configUtil, IMurmurHashUtil murmurHashUtil)
+                    IConfigUtil configUtil, ICustomPartitioner customPartitioner)
         {
             this._configuration = configuration;
             this._logger = logger;
             this._configUtil = configUtil;
             this._producer = null;
-            this._murmurHashUtil = murmurHashUtil;
+            this._customPartitioner = customPartitioner;
         }
 
         ~KafkaProducer()
@@ -54,12 +54,7 @@ namespace sampledotnetcoreapi.producer
                 //producerConfig.Partitioner = Partitioner.Murmur2Random;
                 // custom partitioner needs to set on app that produces response
                 _producer = new ProducerBuilder<string, string>(Config)
-                    .SetPartitioner(topicName, (string topicName, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull) =>
-                    {
-                        var keyString = System.Text.UTF8Encoding.UTF8.GetString(keyData.ToArray());
-                        _logger.LogInformation("Key string in partitioner : {key}", keyString);
-                        return _murmurHashUtil.MurmurHash(keyData.ToArray(), partitionCount);
-                    })
+                    .SetPartitioner(topicName, new PartitionerDelegate(_customPartitioner.customPartitioner))
                     .Build();
       
                 _logger.LogInformation("Successfully constructed kafka producer");
