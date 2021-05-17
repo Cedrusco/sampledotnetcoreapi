@@ -17,19 +17,22 @@ namespace sampledotnetcoreapi.Kafka
         private IConsumer<string, string> _kafkaConsumer;
         private readonly IConfigUtil _configUtil;
         private readonly ISynchronzationUtil _synchronzationUtil;
+        private readonly IMurmurHashUtil _murmurHashUtil;
 
         private readonly string _topicName;
         private ConcurrentDictionary<string, string> _responseMap = new ConcurrentDictionary<string, string>();
 
-        public KafkaConsumer(ILogger<KafkaConsumer> logger, 
+        public KafkaConsumer(ILogger<KafkaConsumer> logger,
                                 IConfiguration configuration,
                                    IConfigUtil configUtil,
-                                   ISynchronzationUtil synchronzationUtil)
+                                   ISynchronzationUtil synchronzationUtil,
+                                   IMurmurHashUtil murmurHashUtil)
         {
             this._logger = logger;
             this._configuration = configuration;
             this._configUtil = configUtil;
             this._synchronzationUtil = synchronzationUtil;
+            this._murmurHashUtil = murmurHashUtil;
             _topicName = _configuration["ConfigProperties:Kafka:ResponseTopicName"];
         }
         public string GetResponseById(string requestId)
@@ -133,6 +136,20 @@ namespace sampledotnetcoreapi.Kafka
                 _kafkaConsumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
                 _logger.LogInformation("Successfully constructed KafkaConsumer");
             }
+        }
+
+        public string GenerateRequestId(bool computePartition)
+        {
+            string requestId = Guid.NewGuid().ToString();
+            if (computePartition)
+            {
+                while (!IsAssignmentPartition(_murmurHashUtil.MurmurHash(requestId)))
+                {
+                    requestId = Guid.NewGuid().ToString();
+                }
+            }
+
+            return requestId;
         }
     }
 }

@@ -54,23 +54,15 @@ namespace sampledotnetcoreapi.Controllers
             {
                 // This needs to be checked against the partition assignment of response topic consumer
                 // in future enhancements
-                string requestId = Guid.NewGuid().ToString();
                 // This could affect response time 
                 var computePartition = _configuration.GetValue<bool>("ConfigProperties:Kafka:ComputePartition");
-                if (computePartition)
-                {
-                    while (!_consumer.IsAssignmentPartition(_murmur2HashUtil.MurmurHash(requestId)))
-                    {
-                        requestId = Guid.NewGuid().ToString();
-                    }
-                }
+                string requestId = _consumer.GenerateRequestId(computePartition);
                 _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 var reader = new StreamReader(Request.Body);
                 var value = await reader.ReadToEndAsync();
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", topicName, requestId, value);
                  _producer.ProduceRecord(topicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
-
                 _synchronzationUtil.AddLockObject(requestId, syncObject);
                 syncObject.WaitOne();
                 return Ok(_consumer.GetResponseById(requestId));

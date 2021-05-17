@@ -11,5 +11,7 @@ namespace sampledotnetcoreapi.Kafka
         void StartConsumer();
 
         bool IsAssignmentPartition(int partitionId);
+
+        string GenerateRequestId(bool computePartition);
     }
 }
