@@ -1,4 +1,5 @@
-﻿using Confluent.Kafka;
+﻿using com.bswift.model.events.employee;
+using Confluent.Kafka;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -14,7 +15,7 @@ namespace sampledotnetcoreapi.Kafka
     {
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
-        private IConsumer<string, string> _kafkaConsumer;
+        private IConsumer<string, EmployeeUpdateEvent> _kafkaConsumer;
         private readonly IConfigUtil _configUtil;
         private readonly ISynchronzationUtil _synchronzationUtil;
         private readonly IMurmurHashUtil _murmurHashUtil;
@@ -34,6 +35,8 @@ namespace sampledotnetcoreapi.Kafka
             this._synchronzationUtil = synchronzationUtil;
             this._murmurHashUtil = murmurHashUtil;
             _topicName = _configuration["ConfigProperties:Kafka:ResponseTopicName"];
+            EnsureConsumer();
+            _logger.LogInformation("Constructor called");
         }
         public string GetResponseById(string requestId)
         {
@@ -87,28 +90,31 @@ namespace sampledotnetcoreapi.Kafka
                     _logger.LogInformation("Consumed the record key = {Key}, value = {Value}",
                         ConsumerRecord.Message.Key, ConsumerRecord.Message.Value) ;
                     // Get the lock object for request
-                    EventWaitHandle lockObject = _synchronzationUtil.GetLockObject(ConsumerRecord.Message.Key);
-                    if (lockObject != null)
+                    if (ConsumerRecord.Message.Value.status != StatusType.REQUESTED)
                     {
-                        if (!_responseMap.TryAdd(ConsumerRecord.Message.Key, ConsumerRecord.Message.Value))
+                        EventWaitHandle lockObject = _synchronzationUtil.GetLockObject(ConsumerRecord.Message.Key);
+                        if (lockObject != null)
                         {
-                            _logger.LogWarning("Error adding response to response map for request {Key}", ConsumerRecord.Message.Key);
+                            if (!_responseMap.TryAdd(ConsumerRecord.Message.Key, ConsumerRecord.Message.Value.status.ToString()))
+                            {
+                                _logger.LogWarning("Error adding response to response map for request {Key}", ConsumerRecord.Message.Key);
+                            }
+                            lockObject.Set(); // Signal the main controller thread so that it can get the response
                         }
-                        lockObject.Set(); // Signal the main controller thread so that it can get the response
-                    }                  
+                    }
                 }
             }
             catch (OperationCanceledException)
             {
                 //commit offset manually
-                try
-                {
-                    _kafkaConsumer.Commit();
-                }
-                catch (KafkaException e)
-                {
-                    _logger.LogWarning("Exceptiopn while committing the offsets on ctrl-c {message}", e.Message);
-                }
+               // try
+               // {
+               //     _kafkaConsumer.Commit();
+               // }
+               // catch (KafkaException e)
+               // {
+               //     _logger.LogWarning("Exceptiopn while committing the offsets on ctrl-c {message}", e.Message);
+              //  }
             }
             finally
             {
@@ -133,7 +139,9 @@ namespace sampledotnetcoreapi.Kafka
                 }                
                 consumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
                 consumerConfig.EnableAutoCommit = true;
-                _kafkaConsumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
+                _kafkaConsumer = new ConsumerBuilder<string, EmployeeUpdateEvent>(consumerConfig)
+                    .SetValueDeserializer(SchemaRegistryUtil.GetDeserializer())
+                    .Build();
                 _logger.LogInformation("Successfully constructed KafkaConsumer");
             }
         }

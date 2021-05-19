@@ -23,7 +23,8 @@ namespace sampledotnetcoreapi.Kafka
             this._configuration = configuration;
             this.NumPartitions = _configuration.GetValue<int>("ConfigProperties:Kafka:ResponseTopicPartitions");
 			_murmurHash2 = MurmurHash2Factory.Instance.Create();
-        }
+			_logger.LogInformation("Constructor called");
+		}
 		/**
 		 * Math.Abs throws overflow exception in some cases.
 		 *  Making the 2's complement signed bit zero before

@@ -36,13 +36,14 @@ namespace sampledotnetcoreapi
                options.AllowSynchronousIO = true;
            });
             */
-            services.AddControllers();
             services.AddSingleton<IKafkaProducer, KafkaProducer>();
             services.AddSingleton<IKafkaConsumer, KafkaConsumer>();
             services.AddSingleton<IConfigUtil, ConfigUtil>();
             services.AddSingleton<ISynchronzationUtil, SynchronizationUtil>();
             services.AddSingleton<IMurmurHashUtil, Murmur2HashUtil>();
             services.AddSingleton<ICustomPartitioner, CustomPartitioner>();
+            services.AddControllers();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

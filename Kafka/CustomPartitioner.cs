@@ -17,6 +17,7 @@ namespace sampledotnetcoreapi.Kafka
         {
             this._murmurHashUtil = murmurHashUtil;
             this._logger = logger;
+            _logger.LogInformation("Constructor called");
         }
         public Partition customPartitioner(string topic, int partitionCount, ReadOnlySpan<byte> keyData, bool keyIsNull)
         {

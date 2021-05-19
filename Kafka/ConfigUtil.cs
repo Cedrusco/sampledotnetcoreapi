@@ -15,6 +15,7 @@ namespace sampledotnetcoreapi.Kafka
         public ConfigUtil(ILogger<ConfigUtil> logger)
         {
             this._logger = logger;
+            _logger.LogInformation("Constructor called");
         }
         public async Task<ClientConfig> LoadConfig(string fileName, string caLocation)
         {

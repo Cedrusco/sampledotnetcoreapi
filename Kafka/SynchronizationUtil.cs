@@ -17,6 +17,7 @@ namespace sampledotnetcoreapi.Kafka
         public SynchronizationUtil(ILogger<SynchronizationUtil> logger)
         {
             this._logger = logger;
+            _logger.LogInformation("Constructor called");
         }
         public void AddLockObject(string requestId, EventWaitHandle lockObject)
         {

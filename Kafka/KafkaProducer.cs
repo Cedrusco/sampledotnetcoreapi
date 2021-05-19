@@ -10,6 +10,8 @@ using Microsoft.VisualBasic.CompilerServices;
 using sampledotnetcoreapi.Kafka;
 using System.Threading;
 using System.Data.HashFunction.MurmurHash;
+using com.bswift.model.events.employee;
+using Confluent.SchemaRegistry.Serdes;
 
 namespace sampledotnetcoreapi.producer
 {
@@ -19,7 +21,7 @@ namespace sampledotnetcoreapi.producer
         private readonly ILogger _logger;
         private readonly IConfigUtil _configUtil;
         //Producer is thread safe as per the confluent kafka team
-        private  IProducer<string, string> _producer;
+        private  IProducer<string, EmployeeUpdateEvent> _producer;
         private ICustomPartitioner _customPartitioner;
 
         public  KafkaProducer(IConfiguration configuration, ILogger<KafkaProducer> logger,
@@ -30,6 +32,8 @@ namespace sampledotnetcoreapi.producer
             this._configUtil = configUtil;
             this._producer = null;
             this._customPartitioner = customPartitioner;
+            initProducer();
+            _logger.LogInformation("Constructor called");
         }
 
         ~KafkaProducer()
@@ -37,30 +41,13 @@ namespace sampledotnetcoreapi.producer
             _producer.Flush();
         }
 
-        public  async void ProduceRecord(string topicName, string key, string value)
+        public  async void ProduceRecord(string topicName, string key, EmployeeUpdateEvent value)
         {
-            var Message = new Message<string, string> { Key = key, Value = value };
+            initProducer();
+            var Message = new Message<string, EmployeeUpdateEvent> { Key = key, Value = value };
             
-            if (_producer == null)
-            {
-                var kafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
-                var certFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
-                //output all the properties
-                _logger.LogInformation("microsoft loglevel {topic}", _configuration["Logging:LogLevel:Microsoft"]);
-                _logger.LogInformation("topic name {topic}", _configuration["ConfigProperties:Kafka:TopicName"]);
-                _logger.LogInformation("config file {conffile}", kafkaConfigFile);
-                var Config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
-                var producerConfig = new ProducerConfig(Config);
-                //producerConfig.Partitioner = Partitioner.Murmur2Random;
-                // custom partitioner needs to set on app that produces response
-                _producer = new ProducerBuilder<string, string>(Config)
-                    .SetPartitioner(topicName, new PartitionerDelegate(_customPartitioner.customPartitioner))
-                    .Build();
-      
-                _logger.LogInformation("Successfully constructed kafka producer");
-            }
 
-            DeliveryResult<string, string> SentStatus = await _producer.ProduceAsync(topicName, Message);
+            DeliveryResult<string, EmployeeUpdateEvent> SentStatus = await _producer.ProduceAsync(topicName, Message);
 
             _logger.LogInformation("Produced message to topic '{Topic}', partition  '{TopicPartition}' , Offset '{TopicPartitionOffset}'",
                         SentStatus.Topic, SentStatus.TopicPartition.Partition.Value, SentStatus.TopicPartitionOffset.Offset);
@@ -81,6 +68,30 @@ namespace sampledotnetcoreapi.producer
             });
             */
             
+        }
+
+        private async void initProducer()
+        {
+            if (_producer == null)
+            {
+                var kafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
+                var certFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
+                var topicName = _configuration["ConfigProperties:Kafka:TopicName"];
+                //output all the properties
+                _logger.LogInformation("microsoft loglevel {topic}", _configuration["Logging:LogLevel:Microsoft"]);
+                _logger.LogInformation("topic name {topic}", topicName);
+                _logger.LogInformation("config file {conffile}", kafkaConfigFile);
+                var Config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
+                var producerConfig = new ProducerConfig(Config);
+                //producerConfig.Partitioner = Partitioner.Murmur2Random;
+                // custom partitioner needs to set on app that produces response
+                _producer = new ProducerBuilder<string, EmployeeUpdateEvent>(Config)
+                    .SetPartitioner(topicName, new PartitionerDelegate(_customPartitioner.customPartitioner))
+                    .SetValueSerializer(SchemaRegistryUtil.GetSerializer())
+                    .Build();
+
+                _logger.LogInformation("Successfully constructed kafka producer");
+            }
         }
     }
 }
