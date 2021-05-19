@@ -1,9 +1,11 @@
-﻿using com.bswift.model.events.employee;
+﻿using AutoMapper;
+using com.bswift.model.events.employee;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using sampledotnetcoreapi.Kafka;
+using sampledotnetcoreapi.Models;
 using sampledotnetcoreapi.producer;
 using System;
 using System.Collections.Generic;
@@ -27,6 +29,7 @@ namespace sampledotnetcoreapi.Controllers
         private IConsumerThread _consumerThread;
         private readonly ISynchronzationUtil _synchronzationUtil;
         private readonly IMurmurHashUtil _murmur2HashUtil;
+        private readonly IMapper _mapper;
 
 
         public KafkaProducerController(IConfiguration configuration, 
@@ -35,7 +38,8 @@ namespace sampledotnetcoreapi.Controllers
                     ISynchronzationUtil synchronzationUtil,
                     IConsumerThread consumerThread,
                     IKafkaConsumer consumer,
-                    IMurmurHashUtil murmur2HashUtil)
+                    IMurmurHashUtil murmur2HashUtil,
+                    IMapper mapper)
         {
             this._configuration = configuration;
             this._logger = logger;
@@ -44,6 +48,7 @@ namespace sampledotnetcoreapi.Controllers
             this._consumer = consumer;
             this._murmur2HashUtil = murmur2HashUtil;
             this._consumerThread = consumerThread;
+            this._mapper = mapper;
             _consumerThread.StartConsumerThread();
             topicName = _configuration["ConfigProperties:Kafka:TopicName"];
             _logger.LogInformation("Constructor called");
@@ -52,9 +57,11 @@ namespace sampledotnetcoreapi.Controllers
         /**
          *  create record
          */
+       // [Produces("application/json")]
+        [Consumes("application/json")]
         [Route("")]
         [HttpPost]
-        public async Task<IActionResult> create(Employee employee)
+        public  IActionResult create([FromBody]EmployeeModel employee)
         {
             try
             {
@@ -65,9 +72,10 @@ namespace sampledotnetcoreapi.Controllers
                 string requestId = _consumer.GenerateRequestId(computePartition);
                 _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 // var reader = new StreamReader(Request.Body);
+                _logger.LogInformation("Employee {employee}", employee);
                 var value = new EmployeeUpdateEvent();
                 value.status = StatusType.REQUESTED;
-                value.employee = employee;
+                value.employee = _mapper.Map<Employee>(employee);
                 value.action = ActionType.CREATE;
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", topicName, requestId, value);
                  _producer.ProduceRecord(topicName, requestId, value);
@@ -86,9 +94,19 @@ namespace sampledotnetcoreapi.Controllers
         /**
          * Update record
          */
-        [Route("/{id}")]
+        [Route("{id}")]
         [HttpPut]
-        public async Task<IActionResult> update(Employee employee)
+        public  IActionResult update(Employee employee)
+        {
+            return Ok("Success");
+        }
+
+        /**
+ * Update record
+ */
+        [Route("")]
+        [HttpGet]
+        public IActionResult get()
         {
             return Ok("Success");
         }

@@ -1,4 +1,9 @@
-﻿using System;
+﻿using com.bswift.model.events.employee;
+using Confluent.Kafka;
+using Confluent.Kafka.SyncOverAsync;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
