@@ -23,12 +23,12 @@ namespace sampledotnetcoreapi.Controllers
         private readonly IKafkaConsumer _consumer;
 
         private readonly string topicName;
-        private Thread consumerThread;
+        //private IConsumerThread _consumerThread;
         private readonly ISynchronzationUtil _synchronzationUtil;
         private readonly IMurmurHashUtil _murmur2HashUtil;
 
 
-        public KafkaProducerController(IConfiguration configuration, 
+        public KafkaProducerController(IConfiguration configuration,
                     ILogger<KafkaProducerController> logger,
                     IKafkaProducer producer,
                     ISynchronzationUtil synchronzationUtil,
@@ -41,8 +41,6 @@ namespace sampledotnetcoreapi.Controllers
             this._synchronzationUtil = synchronzationUtil;
             this._consumer = consumer;
             this._murmur2HashUtil = murmur2HashUtil;
-            consumerThread = new Thread(_consumer.StartConsumer);
-            consumerThread.Start();
             topicName = _configuration["ConfigProperties:Kafka:TopicName"];
         }
 
@@ -61,7 +59,7 @@ namespace sampledotnetcoreapi.Controllers
                 var reader = new StreamReader(Request.Body);
                 var value = await reader.ReadToEndAsync();
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", topicName, requestId, value);
-                 _producer.ProduceRecord(topicName, requestId, value);
+                _producer.ProduceRecord(topicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
                 _synchronzationUtil.AddLockObject(requestId, syncObject);
                 syncObject.WaitOne();
@@ -72,6 +70,13 @@ namespace sampledotnetcoreapi.Controllers
                 _logger.LogError("Exception writing to kafka  message  {message}, stack trace {stack}", e.Message, e.StackTrace);
                 return this.StatusCode(StatusCodes.Status500InternalServerError, "Exception writing to kafka");
             }
+        }
+
+        [Route("")]
+        [HttpGet]
+        public IActionResult get()
+        {
+            return Ok("Success");
         }
     }
 }

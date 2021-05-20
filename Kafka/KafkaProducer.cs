@@ -51,10 +51,10 @@ namespace sampledotnetcoreapi.producer
                 _logger.LogInformation("config file {conffile}", kafkaConfigFile);
                 var Config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
                 var producerConfig = new ProducerConfig(Config);
-                //producerConfig.Partitioner = Partitioner.Murmur2Random;
+                producerConfig.Partitioner = Partitioner.Murmur2;
                 // custom partitioner needs to set on app that produces response
-                _producer = new ProducerBuilder<string, string>(Config)
-                    .SetPartitioner(topicName, new PartitionerDelegate(_customPartitioner.customPartitioner))
+                _producer = new ProducerBuilder<string, string>(producerConfig)
+                    //.SetPartitioner(topicName, new PartitionerDelegate(_customPartitioner.customPartitioner))
                     .Build();
       
                 _logger.LogInformation("Successfully constructed kafka producer");

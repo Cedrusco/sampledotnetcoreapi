@@ -43,6 +43,7 @@ namespace sampledotnetcoreapi
             services.AddSingleton<ISynchronzationUtil, SynchronizationUtil>();
             services.AddSingleton<IMurmurHashUtil, Murmur2HashUtil>();
             services.AddSingleton<ICustomPartitioner, CustomPartitioner>();
+            //services.AddSingleton<IConsumerThread, ConsumerThread>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

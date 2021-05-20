@@ -134,6 +134,7 @@ namespace sampledotnetcoreapi.Kafka
                 consumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
                 consumerConfig.EnableAutoCommit = true;
                 _kafkaConsumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
+                (new Thread(StartConsumer)).Start();
                 _logger.LogInformation("Successfully constructed KafkaConsumer");
             }
         }
