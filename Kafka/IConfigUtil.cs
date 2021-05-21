@@ -8,6 +8,6 @@ namespace sampledotnetcoreapi.Kafka
 {
     public interface IConfigUtil
     {
-        public  Task<ClientConfig> LoadConfig(string fileName, string caLocation);
+        public  ClientConfig LoadConfig(string caLocation);
     }
 }

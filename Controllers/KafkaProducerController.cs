@@ -26,9 +26,8 @@ namespace sampledotnetcoreapi.Controllers
         private readonly IKafkaConsumer _consumer;
 
         private readonly string topicName;
-        private IConsumerThread _consumerThread;
+       // private IConsumerThread _consumerThread;
         private readonly ISynchronzationUtil _synchronzationUtil;
-        private readonly IMurmurHashUtil _murmur2HashUtil;
         private readonly IMapper _mapper;
 
 
@@ -36,9 +35,7 @@ namespace sampledotnetcoreapi.Controllers
                     ILogger<KafkaProducerController> logger,
                     IKafkaProducer producer,
                     ISynchronzationUtil synchronzationUtil,
-                    IConsumerThread consumerThread,
                     IKafkaConsumer consumer,
-                    IMurmurHashUtil murmur2HashUtil,
                     IMapper mapper)
         {
             this._configuration = configuration;
@@ -46,10 +43,9 @@ namespace sampledotnetcoreapi.Controllers
             this._producer = producer;
             this._synchronzationUtil = synchronzationUtil;
             this._consumer = consumer;
-            this._murmur2HashUtil = murmur2HashUtil;
-            this._consumerThread = consumerThread;
+            //this._consumerThread = consumerThread;
             this._mapper = mapper;
-            _consumerThread.StartConsumerThread();
+            //_consumerThread.StartConsumerThread();
             topicName = _configuration["ConfigProperties:Kafka:TopicName"];
             _logger.LogInformation("Constructor called");
         }
@@ -72,17 +68,19 @@ namespace sampledotnetcoreapi.Controllers
                 string requestId = _consumer.GenerateRequestId(computePartition);
                 _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 // var reader = new StreamReader(Request.Body);
-                _logger.LogInformation("Employee {employee}", employee);
+                _logger.LogInformation("Employee {firstname} {lastname} {middlename}", employee.nameFirst, employee.nameLast, employee.nameMiddle);
                 var value = new EmployeeUpdateEvent();
                 value.status = StatusType.REQUESTED;
                 value.employee = _mapper.Map<Employee>(employee);
+                value.employee.idEmployee = requestId;
+                value.employee.nameFull = employee.nameFirst + employee.nameMiddle + employee.nameLast;
                 value.action = ActionType.CREATE;
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", topicName, requestId, value);
                  _producer.ProduceRecord(topicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
                 _synchronzationUtil.AddLockObject(requestId, syncObject);
                 syncObject.WaitOne();
-                return Ok(_consumer.GetResponseById(requestId));
+                return Created("/api/employees/" + _consumer.GetResponseById(requestId), _consumer.GetResponseById(requestId));
             }
             catch (Exception e)
             {

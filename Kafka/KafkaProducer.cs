@@ -51,37 +51,18 @@ namespace sampledotnetcoreapi.producer
 
             _logger.LogInformation("Produced message to topic '{Topic}', partition  '{TopicPartition}' , Offset '{TopicPartitionOffset}'",
                         SentStatus.Topic, SentStatus.TopicPartition.Partition.Value, SentStatus.TopicPartitionOffset.Offset);
-
-            /*
-            _producer.Produce(TopicName, Message, (SentStatus) =>
-            {
-                if (SentStatus.Error.Code != ErrorCode.NoError)
-                {
-                    _logger.LogWarning("Failed to produce message '{Reason}'", SentStatus.Error.Reason);
-                }
-                else
-                {
-                    _logger.LogInformation("Produced message to topic '{Topic}', partition  '{TopicPartition}' , Offset '{TopicPartitionOffset}'",
-                        SentStatus.Topic, SentStatus.TopicPartition, SentStatus.TopicPartitionOffset);
-                }
-
-            });
-            */
             
         }
 
-        private async void initProducer()
+        private  void initProducer()
         {
             if (_producer == null)
             {
-                var kafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
                 var certFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
                 var topicName = _configuration["ConfigProperties:Kafka:TopicName"];
                 //output all the properties
-                _logger.LogInformation("microsoft loglevel {topic}", _configuration["Logging:LogLevel:Microsoft"]);
                 _logger.LogInformation("topic name {topic}", topicName);
-                _logger.LogInformation("config file {conffile}", kafkaConfigFile);
-                var Config = await _configUtil.LoadConfig(kafkaConfigFile, certFilePath);
+                var Config =  _configUtil.LoadConfig(certFilePath);
                 var producerConfig = new ProducerConfig(Config);
                 //producerConfig.Partitioner = Partitioner.Murmur2Random;
                 // custom partitioner needs to set on app that produces response

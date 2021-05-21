@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -11,20 +12,25 @@ namespace sampledotnetcoreapi.Kafka
     public class ConfigUtil : IConfigUtil
     {
         private readonly ILogger _logger;
+        private readonly IConfiguration _configuration;
 
-        public ConfigUtil(ILogger<ConfigUtil> logger)
+        public ConfigUtil(ILogger<ConfigUtil> logger, IConfiguration configuration)
         {
             this._logger = logger;
+            this._configuration = configuration;
             _logger.LogInformation("Constructor called");
         }
-        public async Task<ClientConfig> LoadConfig(string fileName, string caLocation)
+        public  ClientConfig LoadConfig(string caLocation)
         {
                 try
                 {
-                    var kafkaConfigPropertiesMap = (await File.ReadAllLinesAsync(fileName))
-                                    .Where(line => !line.StartsWith("#"))
-                                    .ToDictionary(line => line.Substring(0, line.IndexOf('=')),
-                                                    line => line.Substring(line.IndexOf('=') + 1));
+
+                    var kafkaConfigPropertiesMap = new Dictionary<String, String>();
+                    kafkaConfigPropertiesMap.Add("bootstrap.servers", _configuration["ConfigProperties:Kafka:bootstrapServers"]);
+                    kafkaConfigPropertiesMap.Add("security.protocol", _configuration["ConfigProperties:Kafka:securityProtocol"]);
+                    kafkaConfigPropertiesMap.Add("sasl.mechanisms", _configuration["ConfigProperties:Kafka:saslMechanisms"]);
+                    kafkaConfigPropertiesMap.Add("sasl.username", _configuration["ConfigProperties:Kafka:saslUsername"]);
+                    kafkaConfigPropertiesMap.Add("sasl.password", _configuration["ConfigProperties:Kafka:saslPassword"]);
 
                     ClientConfig kafkaConfig = new ClientConfig(kafkaConfigPropertiesMap);
 
@@ -37,7 +43,7 @@ namespace sampledotnetcoreapi.Kafka
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError("Error reading the kafka configuration filename= '{FileName}', '{Message}'", fileName, e.Message);
+                    _logger.LogError("Error reading the kafka configuration '{Message}'", e.Message);
                     // need to refactor later
                     return null;
                 }

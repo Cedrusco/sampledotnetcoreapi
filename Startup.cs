@@ -42,7 +42,7 @@ namespace sampledotnetcoreapi
             services.AddSingleton<ISynchronzationUtil, SynchronizationUtil>();
             services.AddSingleton<IMurmurHashUtil, Murmur2HashUtil>();
             services.AddSingleton<ICustomPartitioner, CustomPartitioner>();
-            services.AddSingleton<IConsumerThread, ConsumerThread>();
+           //services.AddSingleton<IConsumerThread, ConsumerThread>();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddControllers();
 
