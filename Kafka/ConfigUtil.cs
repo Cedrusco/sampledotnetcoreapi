@@ -20,7 +20,7 @@ namespace sampledotnetcoreapi.Kafka
             this._configuration = configuration;
             _logger.LogInformation("Constructor called");
         }
-        public  ClientConfig LoadConfig(string caLocation)
+        public  ClientConfig LoadConfig()
         {
                 try
                 {
@@ -33,11 +33,6 @@ namespace sampledotnetcoreapi.Kafka
                     kafkaConfigPropertiesMap.Add("sasl.password", _configuration["ConfigProperties:Kafka:saslPassword"]);
 
                     ClientConfig kafkaConfig = new ClientConfig(kafkaConfigPropertiesMap);
-
-                    if (caLocation != null)
-                    {
-                        kafkaConfig.SslCaLocation = caLocation;
-                    }
 
                     return kafkaConfig;
                 }

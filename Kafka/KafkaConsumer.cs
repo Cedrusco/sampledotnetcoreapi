@@ -118,6 +118,7 @@ namespace sampledotnetcoreapi.Kafka
             }
             finally
             {
+                //this commits the offsets
                 _kafkaConsumer.Close();
             }
         }
@@ -126,9 +127,7 @@ namespace sampledotnetcoreapi.Kafka
         {
             if (_kafkaConsumer == null)
             {
-                var kafkaConfigFile = _configuration["ConfigProperties:Kafka:ConfigFile"];
-                var certFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
-                var config =  _configUtil.LoadConfig( certFilePath);
+                var config =  _configUtil.LoadConfig();
                 var consumerConfig = new ConsumerConfig(config);
                 // INSTANCEID can be omitted depending upon how we choose requestId
                 consumerConfig.GroupId = _configuration["ConfigProperties:Kafka:ConsumerGroupId"];
@@ -143,7 +142,7 @@ namespace sampledotnetcoreapi.Kafka
                     .SetValueDeserializer(SchemaRegistryUtil.GetDeserializer())
                     .Build();
                 (new Thread(StartConsumer)).Start();
-                _logger.LogInformation("Successfully constructed KafkaConsumer");
+                _logger.LogInformation("Successfully constructed KafkaConsumer and started consumer thread");
             }
         }
 

@@ -58,11 +58,10 @@ namespace sampledotnetcoreapi.producer
         {
             if (_producer == null)
             {
-                var certFilePath = _configuration["ConfigProperties:Kafka:CertFile"];
                 var topicName = _configuration["ConfigProperties:Kafka:TopicName"];
                 //output all the properties
                 _logger.LogInformation("topic name {topic}", topicName);
-                var Config =  _configUtil.LoadConfig(certFilePath);
+                var Config =  _configUtil.LoadConfig();
                 var producerConfig = new ProducerConfig(Config);
                 //producerConfig.Partitioner = Partitioner.Murmur2Random;
                 // custom partitioner needs to set on app that produces response
