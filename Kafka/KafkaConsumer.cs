@@ -86,21 +86,30 @@ namespace sampledotnetcoreapi.Kafka
             {
                 while (true)
                 {
-                    var ConsumerRecord = _kafkaConsumer.Consume(cts.Token);
-                    _logger.LogInformation("Consumed the record key = {Key}, value = {Value}",
-                        ConsumerRecord.Message.Key, ConsumerRecord.Message.Value) ;
-                    // Get the lock object for request
-                    if (ConsumerRecord.Message.Value.status != StatusType.REQUESTED)
+                    try
                     {
-                        EventWaitHandle lockObject = _synchronzationUtil.GetLockObject(ConsumerRecord.Message.Key);
-                        if (lockObject != null)
+                        var ConsumerRecord = _kafkaConsumer.Consume(cts.Token);
+                        _logger.LogInformation("Consumed the record key = {Key}, value = {Value}",
+                            ConsumerRecord.Message.Key, ConsumerRecord.Message.Value);
+                        // Get the lock object for request
+                        if (ConsumerRecord.Message.Value.status == StatusType.COMPLETED)
                         {
-                            if (!_responseMap.TryAdd(ConsumerRecord.Message.Key, ConsumerRecord.Message.Value.status.ToString()))
+                            EventWaitHandle lockObject = _synchronzationUtil.GetLockObject(ConsumerRecord.Message.Key);
+                            if (lockObject != null)
                             {
-                                _logger.LogWarning("Error adding response to response map for request {Key}", ConsumerRecord.Message.Key);
+                                if (!_responseMap.TryAdd(ConsumerRecord.Message.Key, ConsumerRecord.Message.Value.status.ToString()))
+                                {
+                                    _logger.LogWarning("Error adding response to response map for request {Key}", ConsumerRecord.Message.Key);
+                                }
+                                lockObject.Set(); // Signal the main controller thread so that it can get the response
                             }
-                            lockObject.Set(); // Signal the main controller thread so that it can get the response
                         }
+                    }
+                    catch (ConsumeException consumeException)
+                    {
+                        string key = BitConverter.ToString(consumeException.ConsumerRecord.Message.Key);
+                        _responseMap.TryAdd(key, StatusType.FAILED.ToString());
+                        _synchronzationUtil.GetLockObject(key).Set();
                     }
                 }
             }
