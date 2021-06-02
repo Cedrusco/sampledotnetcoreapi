@@ -12,7 +12,7 @@ namespace sampledotnetcoreapi.Kafka
     {
         public AutoMapperProfile()
         {
-            CreateMap<EmployeeModel, Employee>();
+            CreateMap<EmployeeDTO, Employee>();
         }
     }
 }

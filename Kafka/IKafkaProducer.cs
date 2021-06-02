@@ -8,6 +8,6 @@ namespace sampledotnetcoreapi.producer
 {
     public interface IKafkaProducer
     {
-        void ProduceRecord(string topicName, string key, EmployeeUpdateEvent value);
+        void ProduceRecord(string topicName, string key, EmployeeEvent value);
     }
 }

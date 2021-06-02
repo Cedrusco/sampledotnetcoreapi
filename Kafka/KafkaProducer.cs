@@ -21,7 +21,7 @@ namespace sampledotnetcoreapi.producer
         private readonly ILogger _logger;
         private readonly IConfigUtil _configUtil;
         //Producer is thread safe as per the confluent kafka team
-        private  IProducer<string, EmployeeUpdateEvent> _producer;
+        private  IProducer<string, EmployeeEvent> _producer;
         private ICustomPartitioner _customPartitioner;
 
         public  KafkaProducer(IConfiguration configuration, ILogger<KafkaProducer> logger,
@@ -41,13 +41,13 @@ namespace sampledotnetcoreapi.producer
             _producer.Flush();
         }
 
-        public  async void ProduceRecord(string topicName, string key, EmployeeUpdateEvent value)
+        public  async void ProduceRecord(string topicName, string key, EmployeeEvent value)
         {
             initProducer();
-            var Message = new Message<string, EmployeeUpdateEvent> { Key = key, Value = value };
+            var Message = new Message<string, EmployeeEvent> { Key = key, Value = value };
             
 
-            DeliveryResult<string, EmployeeUpdateEvent> SentStatus = await _producer.ProduceAsync(topicName, Message);
+            DeliveryResult<string, EmployeeEvent> SentStatus = await _producer.ProduceAsync(topicName, Message);
 
             _logger.LogInformation("Produced message to topic '{Topic}', partition  '{TopicPartition}' , Offset '{TopicPartitionOffset}'",
                         SentStatus.Topic, SentStatus.TopicPartition.Partition.Value, SentStatus.TopicPartitionOffset.Offset);
@@ -65,8 +65,9 @@ namespace sampledotnetcoreapi.producer
                 var producerConfig = new ProducerConfig(Config);
                 //producerConfig.Partitioner = Partitioner.Murmur2Random;
                 // custom partitioner needs to set on app that produces response
-                _producer = new ProducerBuilder<string, EmployeeUpdateEvent>(Config)
+                _producer = new ProducerBuilder<string, EmployeeEvent>(Config)
                     .SetPartitioner(topicName, new PartitionerDelegate(_customPartitioner.customPartitioner))
+                    .SetKeySerializer(Serializers.Utf8)
                     .SetValueSerializer(SchemaRegistryUtil.GetSerializer())
                     .Build();
 

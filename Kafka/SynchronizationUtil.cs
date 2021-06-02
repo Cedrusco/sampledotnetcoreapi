@@ -24,7 +24,7 @@ namespace sampledotnetcoreapi.Kafka
 
             if (!lockObjectMap.TryAdd(requestId, lockObject))
             {
-                _logger.LogError("Error adding the lock object for requestId {requestId}");
+                _logger.LogError("Error adding the lock object for requestId {requestId}", requestId);
             }
         }
 
@@ -33,7 +33,7 @@ namespace sampledotnetcoreapi.Kafka
             EventWaitHandle lockObject = null;
             if (!lockObjectMap.TryRemove(requestId, out lockObject))
             {
-                _logger.LogError("Error getting the lock object for requestId {requestId}");
+                _logger.LogError("Error getting the lock object for requestId {requestId}", requestId);
             }
             return lockObject;
         }

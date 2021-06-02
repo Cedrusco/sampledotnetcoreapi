@@ -57,7 +57,7 @@ namespace sampledotnetcoreapi.Controllers
         [Consumes("application/json")]
         [Route("")]
         [HttpPost]
-        public  IActionResult create([FromBody]EmployeeModel employee)
+        public  IActionResult create([FromBody]EmployeeDTO employee)
         {
             try
             {
@@ -68,19 +68,19 @@ namespace sampledotnetcoreapi.Controllers
                 string requestId = _consumer.GenerateRequestId(computePartition);
                 _logger.LogInformation("Computed request id using assigned partition from response topic {requestId}", requestId);
                 // var reader = new StreamReader(Request.Body);
-                _logger.LogInformation("Employee {firstname} {lastname} {middlename}", employee.nameFirst, employee.nameLast, employee.nameMiddle);
-                var value = new EmployeeUpdateEvent();
+                _logger.LogInformation("Employee {firstname} {lastname} {middlename}", employee.FirstName, employee.LastName, employee.MiddleInitial);
+                var value = new EmployeeEvent();
                 value.status = StatusType.REQUESTED;
                 value.employee = _mapper.Map<Employee>(employee);
-                value.employee.idEmployee = requestId;
-                value.employee.nameFull = employee.nameFirst + employee.nameMiddle + employee.nameLast;
+                value.employee.employeeID = requestId;
+                //value.employee.nameFull = employee.nameFirst + employee.nameMiddle + employee.nameLast;
                 value.action = ActionType.CREATE;
                 _logger.LogInformation("Producing to {topicName}, key= {requestId}, value= {value}", topicName, requestId, value);
                  _producer.ProduceRecord(topicName, requestId, value);
                 EventWaitHandle syncObject = new AutoResetEvent(false);
                 _synchronzationUtil.AddLockObject(requestId, syncObject);
                 syncObject.WaitOne();
-                return Created("/api/employees/" + _consumer.GetResponseById(requestId), _consumer.GetResponseById(requestId));
+                return CreatedAtRoute("GetEmployeeById", new { id = _consumer.GetResponseById(requestId) });
             }
             catch (Exception e)
             {
@@ -92,7 +92,7 @@ namespace sampledotnetcoreapi.Controllers
         /**
          * Update record
          */
-        [Route("{id}")]
+        [Route("{id}", Name = "GetEmployeeById")]
         [HttpPut]
         public  IActionResult update(Employee employee)
         {

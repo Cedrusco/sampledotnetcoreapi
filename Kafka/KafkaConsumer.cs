@@ -15,13 +15,14 @@ namespace sampledotnetcoreapi.Kafka
     {
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
-        private IConsumer<string, EmployeeUpdateEvent> _kafkaConsumer;
+        private IConsumer<string, EmployeeEvent> _kafkaConsumer;
         private readonly IConfigUtil _configUtil;
         private readonly ISynchronzationUtil _synchronzationUtil;
         private readonly IMurmurHashUtil _murmurHashUtil;
 
         private readonly string _topicName;
         private ConcurrentDictionary<string, string> _responseMap = new ConcurrentDictionary<string, string>();
+        private Thread consumerThread;
 
         public KafkaConsumer(ILogger<KafkaConsumer> logger,
                                 IConfiguration configuration,
@@ -38,6 +39,8 @@ namespace sampledotnetcoreapi.Kafka
             EnsureConsumer();
             _logger.LogInformation("Constructor called");
         }
+
+
         public string GetResponseById(string requestId)
         {
             string responseValue = null;
@@ -116,14 +119,14 @@ namespace sampledotnetcoreapi.Kafka
             catch (OperationCanceledException)
             {
                 //commit offset manually
-               // try
-               // {
-               //     _kafkaConsumer.Commit();
-               // }
-               // catch (KafkaException e)
-               // {
-               //     _logger.LogWarning("Exceptiopn while committing the offsets on ctrl-c {message}", e.Message);
-              //  }
+                // try
+                // {
+                //     _kafkaConsumer.Commit();
+                // }
+                // catch (KafkaException e)
+                // {
+                //     _logger.LogWarning("Exceptiopn while committing the offsets on ctrl-c {message}", e.Message);
+                //  }
             }
             finally
             {
@@ -147,10 +150,11 @@ namespace sampledotnetcoreapi.Kafka
                 }                
                 consumerConfig.AutoOffsetReset = (AutoOffsetReset)Enum.Parse(typeof(AutoOffsetReset), _configuration["ConfigProperties:Kafka:AutoOffsetReset"]);
                 consumerConfig.EnableAutoCommit = true;
-                _kafkaConsumer = new ConsumerBuilder<string, EmployeeUpdateEvent>(consumerConfig)
+                _kafkaConsumer = new ConsumerBuilder<string, EmployeeEvent>(consumerConfig)
+                    .SetKeyDeserializer(Deserializers.Utf8)
                     .SetValueDeserializer(SchemaRegistryUtil.GetDeserializer())
                     .Build();
-                (new Thread(StartConsumer)).Start();
+                (consumerThread = new Thread(StartConsumer)).Start();
                 _logger.LogInformation("Successfully constructed KafkaConsumer and started consumer thread");
             }
         }
